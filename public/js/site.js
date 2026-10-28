@@ -4,62 +4,30 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.documentElement.classList.add("js");
 
-  // ---------- entrances: the parts of each section arrive in reading order, once ----------
-  const PARTS = ".svc h2, .svc-row, .prose > :not(ul, dl), .dots li, .team > div,.plate-pic, .tabs, .plate-body, .plate-acts, .janji-intro > *, .slip, .letter-col > *, .statement, .kontak-pic, .kontak-links, .kontak-info, .kontak-map, .faq h2, .faq-text p, .others h2, .others li, .wide-pic, .wide-text > *";
+  // ---------- entrances: the parts of each section rise in reading order, once ----------
+  const PARTS = ".intro-text, .stats > div, .sec-title, .sec-sub, .bento > li, .consult-pic, .consult-copy > *, .behel-copy > *, .behel-pic, .reviews-grid > *, .janji-shell, .faq-side > *, .qa, .lokasi-copy > *, .map-shell, .art, .article-side, .wide-pic, .wide-text > *, .letter-full, .team > li, .ft-cta > *";
   const io = new IntersectionObserver((es) => es.forEach((en) => {
     if (!en.isIntersecting) return;
     io.unobserve(en.target);
-    en.target.classList.add("in");
-  }), { threshold: 0.06, rootMargin: "0px 0px -5% 0px" });
-  $$(PARTS).forEach((el) => {
-    if (el.getBoundingClientRect().top < innerHeight * 0.95) return; // already on screen: leave it be
-    const box = el.closest("section") || el.parentElement;
+    const el = en.target;
+    el.classList.add("in");
+    // once it has arrived, drop the delay so it does not slow the element's own hover and open transitions
+    el.addEventListener("transitionend", () => { el.removeAttribute("data-rv"); el.classList.remove("in"); el.style.removeProperty("--d"); }, { once: true });
+  }), { threshold: 0.08, rootMargin: "0px 0px -6% 0px" });
+  if (!reduce) $$(PARTS).forEach((el) => {
+    if (el.getBoundingClientRect().top < innerHeight * 0.92) return; // already on screen: leave it be
+    const box = el.closest("section, footer") || el.parentElement;
     const i = $$(PARTS, box).indexOf(el);
     el.dataset.rv = "";
-    el.style.setProperty("--d", Math.max(0, i) % 6);
+    el.style.setProperty("--d", Math.max(0, i) % 5);
     io.observe(el);
   });
 
-  // ---------- the photograph that stays: slow crossfade, or the picture of the active treatment ----------
-  const pane = $("[data-pane]");
-  const pics = pane ? $$(".pane-pic", pane) : [];
-  const show = (key) => {
-    const next = pics.find((p) => p.dataset.pic === key);
-    if (!next || next.classList.contains("on")) return;
-    pics.forEach((p) => p.classList.toggle("on", p === next));
-  };
-  const opening = pics.filter((p) => p.dataset.pic === "awal");
-  let cycle = 0, timer = null, held = false;
-  const tick = () => {
-    if (held || document.hidden || opening.length < 2) return;
-    cycle = (cycle + 1) % opening.length;
-    pics.forEach((p) => p.classList.toggle("on", p === opening[cycle]));
-  };
-  if (!reduce && opening.length > 1) timer = setInterval(tick, 6200);
-
-  // ---------- treatments: the row nearest the middle of the screen is the active one ----------
-  const list = $("[data-svc]");
-  if (list) {
-    const rows = $$(".svc-row", list);
-    const activate = (row) => {
-      if (!row) return;
-      rows.forEach((r) => r.classList.toggle("on", r === row));
-      held = true;
-      show(row.dataset.pic);
-    };
-    rows.forEach((r) => {
-      r.addEventListener("mouseenter", () => activate(r));
-      r.addEventListener("focusin", () => activate(r));
-    });
-    const mid = new IntersectionObserver((es) => es.forEach((en) => { if (en.isIntersecting) activate(en.target); }), { rootMargin: "-45% 0px -45% 0px" });
-    rows.forEach((r) => mid.observe(r));
-    // back up in the opening screen: the opening pictures take over again
-    const hero = $(".hero");
-    if (hero) new IntersectionObserver(([en]) => {
-      if (!en.isIntersecting || en.intersectionRatio < 0.5) return;
-      held = false;
-      pics.forEach((p) => p.classList.toggle("on", p === opening[cycle]));
-    }, { threshold: [0.5] }).observe(hero);
+  // ---------- the navigation pill turns solid once the opening photograph has passed ----------
+  const nav = $("[data-nav]"), hero = $("[data-hero]");
+  if (nav) {
+    if (hero) new IntersectionObserver(([en]) => nav.classList.toggle("solid", !en.isIntersecting), { rootMargin: "-80px 0px 0px 0px" }).observe(hero);
+    else nav.classList.add("solid");
   }
 
   // ---------- behel tabs ----------
@@ -83,17 +51,31 @@
     });
   });
 
-  // ---------- menu ----------
-  const menu = $("#menu"), menuBtn = $("[data-menu]");
-  const closeMenu = () => { menu.hidden = true; menuBtn?.setAttribute("aria-expanded", "false"); menuBtn?.focus(); };
-  menuBtn?.addEventListener("click", () => { menu.hidden = false; menuBtn.setAttribute("aria-expanded", "true"); $(".menu-links a", menu).focus(); });
-  menu?.addEventListener("click", (ev) => { if (ev.target.closest("a, [data-menu-close]")) closeMenu(); });
-  addEventListener("keydown", (ev) => { if (ev.key === "Escape" && menu && !menu.hidden) closeMenu(); });
+  // ---------- menu: a glass sheet under the pill; the burger turns into a cross ----------
+  const menu = $("#menu"), burger = $("[data-menu]");
+  const setMenu = (open) => {
+    if (!menu || !burger) return;
+    burger.setAttribute("aria-expanded", String(open));
+    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      menu.hidden = false;
+      requestAnimationFrame(() => requestAnimationFrame(() => menu.classList.add("open")));
+      $(".menu-main a", menu).focus({ preventScroll: true });
+    } else {
+      menu.classList.remove("open");
+      const done = () => { if (!menu.classList.contains("open")) menu.hidden = true; };
+      reduce ? done() : setTimeout(done, 450);
+    }
+  };
+  burger?.addEventListener("click", () => setMenu(burger.getAttribute("aria-expanded") !== "true"));
+  menu?.addEventListener("click", (ev) => { if (ev.target.closest("a")) setMenu(false); });
+  addEventListener("keydown", (ev) => { if (ev.key === "Escape" && menu && !menu.hidden) { setMenu(false); burger.focus(); } });
+  matchMedia("(min-width: 961px)").addEventListener("change", (m) => { if (m.matches) setMenu(false); });
 
   // the floating WhatsApp button steps aside wherever the page already shows a way to WhatsApp:
-  // the opening screen, the appointment slip and the footer
+  // the opening photograph, the booking card and the footer
   const float = $(".wa-float");
-  const near = $$(".hero, .slip-send, .ft");
+  const near = $$(".hero, .janji-shell, .ft");
   if (float && near.length) {
     const seen = new Set();
     const fio = new IntersectionObserver((es) => {
@@ -114,15 +96,16 @@
   const hours = (d) => jam.find((j) => j.day === d);
   const pad = (h) => String(h).padStart(2, "0") + ".00";
   const now = wib(), day = now.getDay(), h = now.getHours() + now.getMinutes() / 60, today = hours(day);
-  let status;
+  let status, open = true;
   if (today.buka === 0 && today.tutup === 24) status = `Buka sekarang · ${HARI[day]} buka 24 jam`;
   else if (h >= today.buka && h < today.tutup) status = `Buka sekarang · sampai ${pad(today.tutup)} WIB`;
-  else if (h < today.buka) status = `Tutup sekarang · buka hari ini ${pad(today.buka)} WIB`;
-  else { const t = hours((day + 1) % 7); status = `Tutup sekarang · buka besok ${t.buka === 0 && t.tutup === 24 ? "24 jam" : pad(t.buka) + " WIB"}`; }
+  else if (h < today.buka) { open = false; status = `Tutup sekarang · buka hari ini ${pad(today.buka)} WIB`; }
+  else { open = false; const t = hours((day + 1) % 7); status = `Tutup sekarang · buka besok ${t.buka === 0 && t.tutup === 24 ? "24 jam" : pad(t.buka) + " WIB"}`; }
+  document.documentElement.classList.toggle("is-closed", !open);
   $$("[data-open-status]").forEach((el) => (el.textContent = status));
   $$(".hours tr[data-day]").forEach((r) => { if (r.dataset.day === String(day)) r.setAttribute("data-today", ""); });
 
-  // ---------- the appointment slip fills itself ----------
+  // ---------- the appointment ticket fills itself ----------
   const form = $("[data-janji]");
   if (!form || !dataEl) return;
   const data = JSON.parse(dataEl.textContent);
@@ -195,5 +178,5 @@
   });
   fitSlots();
   update();
-  $$(".slip .changed").forEach((el) => el.classList.remove("changed"));
+  $$(".ticket .changed").forEach((el) => el.classList.remove("changed"));
 })();

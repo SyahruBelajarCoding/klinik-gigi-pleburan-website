@@ -1,12 +1,7 @@
 // Every page of the site. Each returns { path, html }; build.mjs writes them to dist/.
-import { klinik, layanan, behel, faq } from "./data.mjs";
-import { e, img, icon, tooth, wa, waBtn, btn, page, stage, serviceList, servicePics, behelPlate, booking, faqText, contactBand, dentist, faqSchema, crumbs, alamatLengkap } from "./lib.mjs";
+import { klinik, jamRingkas, layanan, behel, faq } from "./data.mjs";
+import { e, img, small, icon, stars, btn, waBtn, head, page, pageHero, services, consult, behelBand, reviews, booking, faqList, location, dentist, faqSchema, crumbs, alamatLengkap } from "./lib.mjs";
 
-const HERO_PICS = [
-  ["cermin", "Kaca mulut dokter gigi di depan kursi periksa yang buram", "awal"],
-  ["kursi", "Kursi periksa gigi berwarna putih di dekat jendela", "awal"],
-  ["sonde", "Kaca mulut dan sonde, alat pemeriksaan gigi, di atas meja putih", "awal"],
-];
 const SUFFIX = "Klinik Gigi & Ortodonti Pleburan";
 
 // a letter from the doctors; the wording is a draft for the clinic to confirm
@@ -16,31 +11,68 @@ const LETTER = [
   "Kami buka sampai malam dan juga hari Minggu, karena banyak pasien baru sempat setelah kerja atau kuliah. Kabari jam berapa Anda datang, supaya kursi sudah siap dan Anda tidak menunggu lama.",
   "Selama tindakan kami putar musik. Bila ada yang terasa tidak nyaman, angkat tangan; kami berhenti dulu dan menjelaskan apa yang sedang dikerjakan.",
 ];
-const signOff = `<p class="sign">${klinik.dokter.map((d) => e(d.nama)).join(" dan ")}<span>${e(klinik.nama)}, Pleburan</span></p>`;
+const initials = (nama) => nama.replace(/^drg\.\s*/, "").split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+const sign = `<span class="monos" aria-hidden="true">${klinik.dokter.map((d) => `<span class="mono">${initials(d.nama)}</span>`).join("")}</span><span class="sign-txt"><strong>${klinik.dokter.map((d) => e(d.nama)).join(" dan ")}</strong><small>${e(klinik.nama)}, Pleburan</small></span>`;
 
-const letter = () => `<section class="letter" aria-label="Surat dari dokter">
-  <div class="letter-col">
-    ${tooth("letter-mark")}
-    ${LETTER.map((p) => `<p>${e(p)}</p>`).join("")}
-    ${signOff}
+const paras = (items) => items.map((p) => `<p>${e(p)}</p>`).join("");
+const checks = (items) => `<ul class="checks">${items.map((i) => `<li>${icon("check")}<span>${e(i)}</span></li>`).join("")}</ul>`;
+const dots = (items) => `<ul class="dots">${items.map((i) => `<li>${e(i)}</li>`).join("")}</ul>`;
+
+// long reading on the left, the visit as a card that stays beside it
+const article = (sections, side) => `<section class="section article" aria-label="Penjelasan perawatan">
+  <div class="wrap article-grid">
+    <div class="article-body">${sections.map(([id, h, inner]) => `<section class="art" aria-labelledby="${id}"><h2 id="${id}">${h}</h2>${inner}</section>`).join("")}</div>
+    <aside class="article-side">${side}</aside>
   </div>
 </section>`;
+const visitCard = (title, rows, ask, from) => `<div class="shell"><div class="core visit">
+  <p class="pill">Langkah kunjungan</p>
+  <h3>${e(title)}</h3>
+  <ol>${rows.map(([a, b]) => `<li><span>${e(a)}</span><span>${e(b)}</span></li>`).join("")}</ol>
+  <div class="visit-acts">${btn("Pilih jam", "#janji")}${waBtn("Tanya lewat WhatsApp", ask, from)}</div>
+</div></div>`;
 
 // ---------- home ----------
 function home() {
-  const sheet = `<section class="hero">
-      <h1>Klinik gigi &amp; behel di Pleburan</h1>
-      <p class="lead">Dokter gigi dan dokter gigi spesialis ortodonti di ${e(klinik.jalanPendek)}, Semarang. Buka setiap hari, Minggu sampai pukul 22.00.</p>
-      <div class="acts">${waBtn("Buat janji lewat WhatsApp", "saya ingin membuat janji periksa gigi.", "beranda")}<a class="link" href="#janji">atau pilih jam dulu</a></div>
-      <p class="hero-note"><a href="${klinik.maps}" target="_blank" rel="noopener">${klinik.ulasan.nilai} di Google Maps, dari ${klinik.ulasan.jumlah} ulasan pasien</a></p>
-    </section>
-    ${serviceList({ from: "beranda" })}`;
-  const body = stage({ current: "beranda", sheet, label: "Foto suasana perawatan gigi", pics: [...HERO_PICS, ...servicePics()] })
-    + behelPlate(behel.tab, { from: "beranda" })
+  const hero = `<section class="hero" data-hero aria-labelledby="hero-h">
+  <picture class="hero-media">
+    <source media="(max-width: 760px)" srcset="/img/hero-tegak.webp" width="900" height="1300">
+    <img src="/img/hero-1000.webp" srcset="/img/hero-1000.webp 1000w, /img/hero.webp 2000w" sizes="100vw" alt="Dokter gigi berbincang dengan pasien yang tersenyum di kursi periksa" width="2000" height="1250" fetchpriority="high" decoding="async">
+  </picture>
+  <div class="hero-shade" aria-hidden="true"></div>
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <p class="pill pill-glass"><span class="dot" aria-hidden="true"></span><span data-open-status>${e(jamRingkas)}</span></p>
+      <h1 id="hero-h">Senyum sehat, dirawat dengan <em>tenang</em>.</h1>
+      <p class="hero-lead">Dokter gigi dan dokter gigi spesialis ortodonti di ${e(klinik.jalanPendek)}, Semarang, ${e(klinik.patokan)}.</p>
+      <div class="acts">${btn("Buat janji", "#janji", { cls: "btn-light" })}${waBtn("Chat WhatsApp", "saya ingin membuat janji periksa gigi.", "beranda", "btn-glass")}</div>
+    </div>
+    <a class="hero-card" href="${klinik.maps}" target="_blank" rel="noopener">
+      <span class="hero-card-num">${e(klinik.ulasan.nilai)}</span>
+      <span class="hero-card-txt">${stars(klinik.ulasan.nilai)}<span>${e(klinik.ulasan.jumlah)} ulasan pasien di Google Maps</span></span>
+      <span class="ic-circle">${icon("up")}</span>
+    </a>
+  </div>
+</section>`;
+  const intro = `<section class="intro" aria-label="Klinik ini secara singkat">
+  <div class="wrap">
+    <p class="intro-text">Satu klinik untuk perawatan gigi sehari-hari <span class="pic-pill">${img("sonde-lebar-700", "", { sizes: "160px" })}</span> dan behel yang direncanakan dokter gigi spesialis ortodonti <span class="pic-pill">${img("behel-tangan-700", "", { sizes: "160px" })}</span> <span class="soft">buka sampai malam, juga hari Minggu.</span></p>
+    <dl class="stats">
+      <div><dt>Senin–Sabtu</dt><dd>24 jam</dd></div>
+      <div><dt>Minggu</dt><dd>08–22</dd></div>
+      <div><dt>Dari Simpang Lima</dt><dd>±850 m</dd></div>
+      <div><dt>Nilai di Google Maps</dt><dd>${e(klinik.ulasan.nilai)}</dd></div>
+    </dl>
+  </div>
+</section>`;
+  const body = hero + intro
+    + services()
+    + consult({ from: "beranda" })
+    + behelBand(behel.tab, { from: "beranda", lead: behel.lead })
+    + reviews({ quote: LETTER[1], sign })
     + booking({ from: "beranda" })
-    + letter()
-    + contactBand({ from: "beranda" })
-    + faqText(faq);
+    + faqList(faq, { from: "beranda" })
+    + location({ from: "beranda" });
   return page({
     path: "/",
     title: `Klinik Gigi & Spesialis Ortodonti di Pleburan, Semarang | Behel, Tambal, Scaling`,
@@ -52,32 +84,26 @@ function home() {
 }
 
 // ---------- one page per treatment ----------
-const factList = (items) => `<dl class="facts">${items.map(([k, v]) => `<div><dt>${e(k)}</dt><dd>${e(v)}</dd></div>`).join("")}</dl>`;
-const prose = (id, heading, inner) => `<section class="prose" aria-labelledby="${id}"><h2 id="${id}">${e(heading)}</h2>${inner}</section>`;
-const ul = (items) => `<ul class="dots">${items.map((i) => `<li>${e(i)}</li>`).join("")}</ul>`;
-const paras = (items) => items.map((p) => `<p>${e(p)}</p>`).join("");
-
-const others = (skip) => `<section class="others" aria-labelledby="others-h">
-  <h2 id="others-h">Perawatan lain</h2>
-  <ul>${layanan.filter((l) => l.url && l.slug !== skip).map((l) => `<li><a href="${l.url}"><span>${e(l.nama)}</span><span class="svc-dur">${e(l.durasi)}</span>${icon("arrow")}</a></li>`).join("")}</ul>
-</section>`;
-
 function servicePage(l) {
   const from = l.url;
-  const sheet = `<section class="hero hero-page">
-      <h1>${e(l.pendek)} di Semarang</h1>
-      <p class="lead">${e(l.lead)}</p>
-      ${factList([["Lama tindakan", l.durasi], ["Kunjungan", l.hasil]])}
-      <div class="acts">${waBtn(`Tanya soal ${l.pendek.toLowerCase()}`, `saya ingin bertanya soal ${l.nama.toLowerCase()}.`, from)}<a class="link" href="#janji">atau pilih jam dulu</a></div>
-    </section>
-    ${prose("apa-h", "Apa yang dilakukan", paras(l.apa) + (l.img2 ? `<figure class="inline-pic">${img(l.img2[0], l.img2[1], { sizes: "(max-width: 900px) 90vw, 40vw" })}</figure>` : ""))}
-    ${prose("cocok-h", "Cocok bila", ul(l.cocok))}
-    ${prose("risiko-h", "Risiko dan batasan", ul(l.risiko))}
-    ${prose("setelah-h", "Setelah perawatan", ul(l.setelah))}`;
-  const body = stage({ current: l.slug, sheet, label: `Foto ${l.pendek.toLowerCase()}`, pics: [[l.img, l.alt, l.slug], HERO_PICS[1]] })
-    + booking({ from, pick: l.slug, heading: "Atur kunjungan Anda", intro: `Keperluan ${l.pendek.toLowerCase()} sudah terpilih. Pilih hari dan jam; kartu janji terisi langkah kunjungannya dan terkirim ke admin lewat WhatsApp.` })
-    + faqText(l.faq, { heading: `Soal ${l.pendek.toLowerCase()}` })
-    + others(l.slug);
+  const ask = `saya ingin bertanya soal ${l.nama.toLowerCase()}.`;
+  const body = pageHero({
+    crumb: l.pendek,
+    h1: `${e(l.pendek)} <em>di Semarang</em>`,
+    lead: e(l.lead),
+    facts: [["Lama tindakan", l.durasi], ["Kunjungan", l.hasil]],
+    acts: btn("Pilih jam", "#janji") + waBtn(`Tanya soal ${l.pendek.toLowerCase()}`, ask, from),
+    pic: [small(l.img), l.alt],
+  })
+    + article([
+      ["apa-h", "Apa yang dilakukan", paras(l.apa) + (l.img2 ? `<figure class="shell inline-pic"><div class="core">${img(l.img2[0], l.img2[1], { sizes: "(max-width: 900px) 92vw, 52vw" })}</div></figure>` : "")],
+      ["cocok-h", "Cocok bila", checks(l.cocok)],
+      ["risiko-h", "Risiko dan batasan", dots(l.risiko)],
+      ["setelah-h", "Setelah perawatan", checks(l.setelah)],
+    ], visitCard(l.nama, l.kunjungan, ask, from))
+    + booking({ from, pick: l.slug, heading: "Atur <em>kunjungan Anda</em>", intro: `Keperluan ${l.pendek.toLowerCase()} sudah terpilih. Pilih hari dan jam; kartu janji terisi langkah kunjungannya dan terkirim ke admin lewat WhatsApp.` })
+    + faqList(l.faq, { heading: `Soal <em>${e(l.pendek.toLowerCase())}</em>`, from })
+    + services({ skip: l.slug, id: "lainnya", pill: "Layanan lain", heading: "Perawatan <em>lainnya</em>", sub: "Setiap perawatan punya halaman sendiri: langkah kunjungan, risiko, dan cara merawatnya." });
   return page({
     path: l.url,
     title: `${l.judulSeo} | ${SUFFIX}`,
@@ -92,30 +118,37 @@ function servicePage(l) {
 function behelPage() {
   const from = "/behel/";
   const b = layanan.find((l) => l.slug === "behel");
-  const sheet = `<section class="hero hero-page">
-      <h1>Behel oleh dokter gigi spesialis</h1>
-      <p class="lead">${e(behel.lead)}</p>
-      ${factList([["Lama perawatan", "Umumnya 1,5–3 tahun"], ["Kontrol", "Setiap 3–4 minggu"]])}
-      <div class="acts">${waBtn("Konsultasi behel", "saya ingin konsultasi behel.", from)}<a class="link" href="#janji">atau pilih jam dulu</a></div>
-    </section>
-    ${prose("apa-h", "Cara behel bekerja", paras(behel.apa))}
-    ${prose("cocok-h", "Cocok untuk", ul(behel.cocok))}`;
-  const spesialis = `<section class="wide" aria-labelledby="sp-h">
-    <figure class="wide-pic">${img("konsultasi-700", "Dokter gigi berbincang dengan pasien yang duduk di kursi periksa", { sizes: "(max-width: 900px) 100vw, 50vw" })}</figure>
+  const ask = "saya ingin konsultasi behel.";
+  const spesialis = `<section class="section wide" aria-labelledby="sp-h">
+  <div class="wrap wide-grid">
+    <figure class="shell wide-pic"><div class="core">${img("konsultasi-700", "Dokter gigi berbincang dengan pasien yang duduk di kursi periksa", { sizes: "(max-width: 900px) 92vw, 44vw" })}</div></figure>
     <div class="wide-text">
-      <h2 id="sp-h">Kenapa spesialis ortodonti</h2>
+      <p class="pill">Kenapa spesialis</p>
+      <h2 id="sp-h">Behel adalah <em>tindakan medis</em></h2>
       ${paras(behel.spesialis)}
       <h3>Risiko dan batasan</h3>
-      ${ul(behel.risiko)}
+      ${dots(behel.risiko)}
       <h3>Merawat gigi saat berbehel</h3>
-      ${ul(behel.setelah)}
+      ${checks(behel.setelah)}
     </div>
-  </section>`;
-  const body = stage({ current: "behel", sheet, label: "Foto behel", pics: [["behel", b.alt, "behel"], ["cermin", HERO_PICS[0][1], "awal"]] })
-    + behelPlate(behel.tab, { from, heading: "Dari pasang sampai retainer", more: false })
+  </div>
+</section>`;
+  const body = pageHero({
+    crumb: "Behel",
+    h1: `Behel oleh dokter gigi <em>spesialis</em>`,
+    lead: e(behel.lead),
+    facts: [["Lama perawatan", "Umumnya 1,5–3 tahun"], ["Kontrol", "Setiap 3–4 minggu"]],
+    acts: btn("Pilih jam konsultasi", "#janji") + waBtn("Konsultasi behel", ask, from),
+    pic: ["behel-700", b.alt],
+  })
+    + article([
+      ["apa-h", "Cara behel bekerja", paras(behel.apa)],
+      ["cocok-h", "Cocok untuk", checks(behel.cocok)],
+    ], visitCard("Tahap perawatan behel", behel.kunjungan, ask, from))
+    + behelBand(behel.tab, { from, heading: "Dari pasang sampai <em>retainer</em>", more: false })
     + spesialis
-    + booking({ from, pick: "behel", heading: "Atur konsultasi behel", intro: "Keperluan behel sudah terpilih. Pilih hari dan jam; kartu janji terisi tahap perawatannya dan terkirim ke admin lewat WhatsApp." })
-    + faqText(behel.faq, { heading: "Soal behel" });
+    + booking({ from, pick: "behel", heading: "Atur <em>konsultasi behel</em>", intro: "Keperluan behel sudah terpilih. Pilih hari dan jam; kartu janji terisi tahap perawatannya dan terkirim ke admin lewat WhatsApp." })
+    + faqList(behel.faq, { heading: "Soal <em>behel</em>", from });
   return page({
     path: from,
     title: `Behel di Semarang oleh Dokter Gigi Spesialis Ortodonti | ${SUFFIX}`,
@@ -128,54 +161,80 @@ function behelPage() {
 
 // ---------- about ----------
 function tentang() {
-  const sheet = `<section class="hero hero-page">
-      <h1>Dokter dan klinik kami</h1>
-      <p class="lead">Klinik gigi dengan dokter gigi umum dan dokter gigi spesialis ortodonti, di ${e(klinik.jalanPendek)}, Pleburan, Semarang.</p>
-    </section>
-    <section class="prose" aria-label="Surat dari dokter">${paras(LETTER)}${signOff}</section>
-    ${prose("tim-h", "Tim dokter", `<dl class="team">${klinik.dokter.map((d) => `<div><dt>${e(d.nama)}</dt><dd>${e(d.peran)}</dd></div>`).join("")}<div><dt>Dokter gigi spesialis ortodonti (Sp.Ort)</dt><dd>Perawatan behel</dd></div></dl>`)}`;
-  const body = stage({ current: "tentang", sheet, label: "Foto ruang praktik", pics: [HERO_PICS[1], ["konsultasi", layanan[0].alt, "konsultasi"]] })
-    + contactBand({ from: "/tentang/" });
+  const from = "/tentang/";
+  const team = [
+    ...klinik.dokter.map((d) => [initials(d.nama), d.nama, d.peran, "Pemeriksaan, tambal, scaling, cabut gigi, dan perawatan gigi sehari-hari."]),
+    ["Sp", "Dokter gigi spesialis ortodonti (Sp.Ort)", "Spesialis ortodonti", "Merencanakan dan memantau perawatan behel, dari pemeriksaan sampai retainer."],
+  ];
+  const body = pageHero({
+    crumb: "Tentang",
+    h1: `Dokter dan <em>klinik kami</em>`,
+    lead: `Klinik gigi dengan dokter gigi umum dan dokter gigi spesialis ortodonti, di ${e(klinik.jalanPendek)}, Pleburan, Semarang.`,
+    acts: btn("Buat janji", "#janji") + waBtn("Chat WhatsApp", "saya ingin bertanya.", from),
+    pic: ["ruang-1200", "Ruang praktik dokter gigi yang terang dengan kursi periksa"],
+  })
+    + `<section class="section" aria-labelledby="surat-h">
+  <div class="wrap narrow">
+    <div class="shell"><div class="core letter-full">
+      <p class="pill">Surat dari dokter</p>
+      <h2 id="surat-h">Cara kami <em>menangani pasien</em></h2>
+      ${paras(LETTER)}
+      <p class="sign">${sign}</p>
+    </div></div>
+  </div>
+</section>`
+    + `<section class="section team-sec" aria-labelledby="tim-h">
+  <div class="wrap">
+    ${head({ pill: "Tim", h: "Tim <em>dokter</em>", id: "tim-h", sub: "Dokter gigi untuk keluhan sehari-hari, dan dokter gigi spesialis ortodonti untuk perawatan behel." })}
+    <ul class="team">${team.map(([m, n, r, d]) => `<li class="shell"><div class="core member"><span class="mono mono-lg" aria-hidden="true">${m}</span><h3>${e(n)}</h3><p class="role">${e(r)}</p><p>${e(d)}</p></div></li>`).join("")}</ul>
+  </div>
+</section>`
+    + booking({ from })
+    + location({ from });
   return page({
-    path: "/tentang/",
+    path: from,
     title: `Tentang Klinik dan Dokter | ${SUFFIX}`,
     description: `Kenali dokter gigi dan dokter gigi spesialis ortodonti di ${klinik.jalan}, Pleburan, Semarang, dan cara kami menangani pasien.`,
     current: "tentang",
     body,
-    schema: [dentist(), crumbs([["Beranda", "/"], ["Tentang", "/tentang/"]])],
+    schema: [dentist(), crumbs([["Beranda", "/"], ["Tentang", from]])],
   });
 }
 
 // ---------- hours and directions ----------
 function kontak() {
-  const sheet = `<section class="hero hero-page">
-      <h1>Jadwal dan lokasi klinik</h1>
-      <p class="lead">${e(alamatLengkap)}. ${e(klinik.patokan)}.</p>
-      ${factList([["Senin–Sabtu", "Buka 24 jam; malam hari, kabari dulu lewat WhatsApp"], ["Minggu", "08.00–22.00"], ["WhatsApp dan telepon", klinik.tel], ["Plus Code", klinik.plusCode]])}
-      <div class="acts">${btn("Petunjuk arah", klinik.maps, { ext: true, ic: "out" })}${waBtn("Chat WhatsApp", "saya ingin bertanya soal jadwal.", "/kontak/", "btn-tone")}</div>
-    </section>`;
-  const body = stage({ current: "kontak", sheet, label: "Foto Semarang", pics: [["simpang-lima-tegak", "Lapangan dan menara masjid di Simpang Lima, Semarang, di siang hari", "kota"], HERO_PICS[1]] })
-    + contactBand({ from: "/kontak/" })
-    + booking({ from: "/kontak/" })
-    + faqText(faq.slice(0, 4));
+  const from = "/kontak/";
+  const body = pageHero({
+    crumb: "Lokasi",
+    h1: `Jadwal dan <em>lokasi</em>`,
+    lead: `${e(alamatLengkap)}. ${e(klinik.patokan)}.`,
+    facts: [["Senin–Sabtu", "Buka 24 jam"], ["Minggu", "08.00–22.00"], ["WhatsApp", klinik.tel]],
+    acts: btn("Petunjuk arah", klinik.maps, { ext: true }) + waBtn("Chat WhatsApp", "saya ingin bertanya soal jadwal.", from),
+    pic: ["simpang-lima-tegak-700", "Lapangan dan menara masjid di Simpang Lima, Semarang, di siang hari"],
+  })
+    + location({ from, heading: "Cara <em>ke klinik</em>" })
+    + booking({ from })
+    + faqList(faq.slice(0, 4), { from });
   return page({
-    path: "/kontak/",
+    path: from,
     title: `Jadwal & Lokasi | ${SUFFIX}`,
     description: `Jam buka, alamat, dan petunjuk arah ke ${klinik.nama} di ${klinik.jalan}, Pleburan, Semarang Selatan. Senin–Sabtu 24 jam, Minggu 08.00–22.00.`,
     current: "kontak",
     body,
-    schema: [dentist(), faqSchema(faq.slice(0, 4)), crumbs([["Beranda", "/"], ["Jadwal & lokasi", "/kontak/"]])],
+    schema: [dentist(), faqSchema(faq.slice(0, 4)), crumbs([["Beranda", "/"], ["Jadwal & lokasi", from]])],
   });
 }
 
 function notFound() {
-  const sheet = `<section class="hero hero-page">
-      <h1>Halaman tidak ditemukan</h1>
-      <p class="lead">Alamat yang Anda buka tidak ada atau sudah dipindah. Coba mulai dari beranda, atau langsung tanyakan lewat WhatsApp.</p>
-      <div class="acts">${btn("Ke beranda", "/", { ic: "arrow" })}${waBtn("Chat WhatsApp", "saya ingin bertanya.", "404", "btn-tone")}</div>
-    </section>
-    ${serviceList({ heading: "Mungkin yang Anda cari", from: "404" })}`;
-  return page({ path: "/404.html", title: `Halaman tidak ditemukan | ${SUFFIX}`, description: "Halaman tidak ditemukan.", current: "", body: stage({ current: "", sheet, pics: [HERO_PICS[0], ...servicePics()] }) + faqText(faq.slice(0, 4)) });
+  const body = pageHero({
+    h1: `Halaman <em>tidak ditemukan</em>`,
+    lead: "Alamat yang Anda buka tidak ada atau sudah dipindah. Coba mulai dari beranda, atau langsung tanyakan lewat WhatsApp.",
+    acts: btn("Ke beranda", "/", { ic: "arrow" }) + waBtn("Chat WhatsApp", "saya ingin bertanya.", "404"),
+    pic: ["cermin-800", "Kaca mulut dokter gigi di depan kursi periksa"],
+  })
+    + services({ heading: "Mungkin yang <em>Anda cari</em>" })
+    + faqList(faq.slice(0, 4), { from: "404" });
+  return page({ path: "/404.html", title: `Halaman tidak ditemukan | ${SUFFIX}`, description: "Halaman tidak ditemukan.", current: "", body, janji: "/#janji" });
 }
 
 export function all() {

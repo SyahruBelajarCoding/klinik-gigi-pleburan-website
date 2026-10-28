@@ -168,6 +168,8 @@ export const layanan = [
     nama: "Veneer & bleaching",
     pendek: "Veneer & bleaching",
     img: "estetik",
+    // the smile sits high in this photograph; wide crops of it keep the top
+    imgPos: "50% 18%",
     img2: ["konsultasi-lebar-700", "Dokter gigi berbincang dengan pasien sebelum perawatan"],
     alt: "Senyum seorang perempuan berambut ikal",
     durasi: "1–3 kunjungan",
