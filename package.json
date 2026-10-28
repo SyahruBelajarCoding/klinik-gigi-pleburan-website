@@ -1,0 +1,12 @@
+{
+  "name": "klinik-gigi-pleburan-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website Klinik Gigi & Spesialis Ortodonti, Jl. Pleburan Barat 3E, Semarang: layanan, behel, jadwal, lokasi dan janji temu lewat WhatsApp.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node src/build.mjs",
+    "preview": "node src/build.mjs && node src/serve.mjs"
+  }
+}
